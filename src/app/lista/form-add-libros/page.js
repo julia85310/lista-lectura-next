@@ -11,7 +11,7 @@ export default function AddLibroPage(){
         }
         
         try {
-            const res = await fetch("http://localhost:3000/api/agenda", {
+            const res = await fetch("http://localhost:3000/api/lista", {
                 method: 'POST',
                 headers: {
                 'Content-Type': 'application/json',

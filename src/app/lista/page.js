@@ -13,12 +13,12 @@ export default function ListaLecturaPage(){
     }, [filter])
 
     async function fetchData() {
-        let url = "/api/lista"
+        let url = "http://localhost:3000/api/lista"; 
 
         if(filter !== "all"){
             url = url + "?filter=" + filter
         }
-        const res = await fetch('http://localhost:3000/api/lista');
+        const res = await fetch(url);
         const data = await res.json();
         setLibros(data);
     }
@@ -46,7 +46,7 @@ export default function ListaLecturaPage(){
     }
 
     async function deleteLibro(libro){
-        const result = window.confirm(`¿Deseas eliminar '${libro.title}'?`);
+        const result = window.confirm(`¿Deseas eliminar '${libro.titulo}'?`);
         if (!result) {
           return;
         }
@@ -62,7 +62,7 @@ export default function ListaLecturaPage(){
           const data = await res.json();
     
           if (res.ok) {
-            getData();
+            fetchData();
           } else {
             alert(`Error: ${data.error}`);
           }
@@ -73,10 +73,10 @@ export default function ListaLecturaPage(){
 
     return <div>
         <h1>Lista de lectura</h1>
-        <Link style={{ color: "blue" }} href={"/lista/form-add-libros"}>Añade un libro aqui</Link>
+        <Link style={{ color: "blue" }} href={"/lista/form-add-libros"}>Añade un libro aqui</Link><br></br>
         <input type='radio' name='filtroLibros' defaultChecked value='all' onChange={() => setFilter('all')}/>Todos
-        <input type='radio' name='filtroLibros' value='read' onChange={() => setFilter('completed')}/>Leidos
-        <input type='radio' name='filtroLibros' value='unread' onChange={() => setFilter('incompleted')}/>No leidos
+        <input type='radio' name='filtroLibros' value='read' onChange={() => setFilter('read')}/>Leidos
+        <input type='radio' name='filtroLibros' value='unread' onChange={() => setFilter('unread')}/>No leidos
         <ul>
             {libros.map((libro) =>
                 <li key={libro.id}>

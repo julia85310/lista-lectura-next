@@ -6,47 +6,31 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export async function GET(request) {
-  const url = new URL(request.url)
-  const filter = url.searchParams.get("filter")
- 
+  const { searchParams } = new URL(request.url);
+  const filter = searchParams.get('filter'); 
+
   try {
-    if(filter == "read"){
-        const { data: libros, error } = await supabase.from('libro').select('*').eq('leido', true).order('titulo', { ascending: true });
-        if (error) {
-            return new Response(
-              JSON.stringify({ error: 'Error al obtener los datos', details: error.message }),
-              { status: 500, headers: { 'Content-Type': 'application/json' } }
-            );
-          }
-      
-          return new Response(JSON.stringify(libros), {
-            headers: { 'Content-Type': 'application/json' },
-          });
-    }else if(filter == "unread"){
-        const { data: libros, error } = await supabase.from('libro').select('*').eq('leido', false).order('titulo', { ascending: true });
-        if (error) {
-            return new Response(
-              JSON.stringify({ error: 'Error al obtener los datos', details: error.message }),
-              { status: 500, headers: { 'Content-Type': 'application/json' } }
-            );
-          }
-      
-          return new Response(JSON.stringify(libros), {
-            headers: { 'Content-Type': 'application/json' },
-          });
-    }else{
-        const { data: libros, error } = await supabase.from('libro').select('*').order('titulo', { ascending: true });
-        if (error) {
-            return new Response(
-              JSON.stringify({ error: 'Error al obtener los datos', details: error.message }),
-              { status: 500, headers: { 'Content-Type': 'application/json' } }
-            );
-          }
-      
-          return new Response(JSON.stringify(libros), {
-            headers: { 'Content-Type': 'application/json' },
-          });
+    let query = supabase.from('libro').select('*').order('titulo', { ascending: true });
+
+    if (filter === 'read') {
+      query = query.eq('leido', true); 
+    } else if (filter === 'unread') {
+      query = query.eq('leido', false); 
     }
+
+    const { data: libros, error } = await query;
+
+    if (error) {
+      return new Response(
+        JSON.stringify({ error: 'Error al obtener los datos', details: error.message }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    return new Response(JSON.stringify(libros), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+
   } catch (err) {
     return new Response(
       JSON.stringify({ error: 'Error interno del servidor', details: err.message }),
@@ -104,10 +88,7 @@ export async function PUT(request) {
   const body = await request.json();
 
   try {
-    const { data: data, error } = await supabase.from('libro')
-    .update({
-      leido: !body.leido
-    }).eq('id', body.id);
+    const { data: data, error } = await supabase.from('libro').update({leido: !body.leido}).eq('id', body.id);
     
     if (error) {
       return new Response(
