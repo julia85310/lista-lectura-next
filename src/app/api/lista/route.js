@@ -1,35 +1,153 @@
-'use client';
+import { createClient } from '@supabase/supabase-js';
 
-import {useState, useEffect} from 'react';
-import Link from 'next/link'
+const supabaseUrl = 'https://hiltuhxwiptrgbnerjrp.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbHR1aHh3aXB0cmdibmVyanJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcxMDgzMTUsImV4cCI6MjA1MjY4NDMxNX0.mHcAkPWO7_NDTIbUZ5xWyoeHrfGsUz_fYy6VgIuWTm0';
 
-export default function ListaLecturaPage(){
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    const [libros, setLibros] = useState([]);
+export async function GET(request) {
+  const url = new URL(request.url)
+  const filter = url.searchParams.get("filter")
+ 
+  try {
+    if(filter == "read"){
+        const { data: libros, error } = await supabase.from('libro').select('*').eq('leido', true).order('titulo', { ascending: true });
+        if (error) {
+            return new Response(
+              JSON.stringify({ error: 'Error al obtener los datos', details: error.message }),
+              { status: 500, headers: { 'Content-Type': 'application/json' } }
+            );
+          }
+      
+          return new Response(JSON.stringify(libros), {
+            headers: { 'Content-Type': 'application/json' },
+          });
+    }else if(filter == "unread"){
+        const { data: libros, error } = await supabase.from('libro').select('*').eq('leido', false).order('titulo', { ascending: true });
+        if (error) {
+            return new Response(
+              JSON.stringify({ error: 'Error al obtener los datos', details: error.message }),
+              { status: 500, headers: { 'Content-Type': 'application/json' } }
+            );
+          }
+      
+          return new Response(JSON.stringify(libros), {
+            headers: { 'Content-Type': 'application/json' },
+          });
+    }else{
+        const { data: libros, error } = await supabase.from('libro').select('*').order('titulo', { ascending: true });
+        if (error) {
+            return new Response(
+              JSON.stringify({ error: 'Error al obtener los datos', details: error.message }),
+              { status: 500, headers: { 'Content-Type': 'application/json' } }
+            );
+          }
+      
+          return new Response(JSON.stringify(libros), {
+            headers: { 'Content-Type': 'application/json' },
+          });
+    }
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: 'Error interno del servidor', details: err.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
 
-    useEffect(() => {
-        fetchData();
-    }, [])
+function comprobaciones(body){
+  if(!body.titulo){
+    return new Response(
+      JSON.stringify({ error: 'Titulo requerido'}),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+  if(!body.autor){
+    return new Response(
+      JSON.stringify({ error: 'Autor requerido'}),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+  return body;
+}
 
-    async function fetchData() {
-        const res = await fetch('http://localhost:3000/api/lista');
-        const data = await res.json();
-        setLibros(data);
+export async function POST(request) {
+  const body = await request.json();
+  const res = comprobaciones(body);
+
+  if(res instanceof Response){
+    return res;
+  }
+
+  try {
+    const { data: data, error } = await supabase.from('libro').insert([res]);
+    if (error) {
+      return new Response(
+        JSON.stringify({ error: 'Error al actualizar los datos', details: error.message }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
-    return <div>
-        <h1>Lista de lectura</h1>
-        <Link style={{ color: "blue" }} href={"/lista/form-add-libro"}>Añade un libro aqui</Link>
-        <ul>
-            {libros.map((libro) =>
-                <li key={libro.id}>
-                    <p style={{fontWeight: 'bold'}}>
-                        <input type='checkbox' checked={libro.leido} onChange={() => updateLibro(libro)}></input>
-                        {libro.titulo}
-                        </p>
-                    <p>Autor: {libro.autor}</p>
-                </li>
-            )}
-        </ul>
-    </div>
+    return new Response(JSON.stringify(data), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: 'Error interno del servidor', details: err.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+
+export async function PUT(request) {
+  const body = await request.json();
+
+  try {
+    const { data: data, error } = await supabase.from('libro')
+    .update({
+      leido: !body.leido
+    }).eq('id', body.id);
+    
+    if (error) {
+      return new Response(
+        JSON.stringify({ error: 'Error al actualizar los datos', details: error.message }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    return new Response(JSON.stringify(data), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: 'Error interno del servidor', details: err.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+
+export async function DELETE(request){
+    const body = await request.json();
+    
+    try{
+      const {data: data, error} = await supabase.from('libro').delete().eq('id', body.id);
+
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: 'Error al actualizar los datos', details: error.message }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(JSON.stringify(data), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch (err) {
+      return new Response(
+        JSON.stringify({ error: 'Error interno del servidor', details: err.message }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 }
